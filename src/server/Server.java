@@ -21,7 +21,7 @@ import spread.*;
 
 /**
  *
- * @author martin
+ * @author martingrabner
  */
 public class Server extends UnicastRemoteObject implements AdvancedMessageListener, ServerInterface {
     

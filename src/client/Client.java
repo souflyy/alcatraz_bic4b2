@@ -29,7 +29,7 @@ import javafx.scene.control.Label;
 
 /**
  *
- * @author Chef-VM
+ * @author danielpozarek
  */
 public class Client extends Application implements ClientInterface/*, MoveListener*/{
     

@@ -5,16 +5,17 @@
  */
 package client;
 
+import allgemein.*;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /**
  *
- * @author Pozarek
+ * @author danielpozarek
  */
 public interface ClientInterface extends Remote {
     
-    //public void spielStartet() throws RemoteException;
-    //public void updateSpielzug() throws RemoteException;
+    //public void startGame(allgemein.Room room, Player player) throws RemoteException;
+    //public void updateMove(Move mv) throws RemoteException;
     
 }
