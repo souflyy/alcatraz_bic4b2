@@ -5,10 +5,15 @@
  */
 package client;
 
+import allgemein.*;
+import server.*;
 import javafx.application.*;
 import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.event.ActionEvent;
@@ -26,6 +31,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Label;
+import java.util.UUID;
+import javafx.scene.layout.GridPane;
 
 /**
  *
@@ -33,21 +40,36 @@ import javafx.scene.control.Label;
  */
 public class Client extends Application implements ClientInterface/*, MoveListener*/{
     
+    
+    
     // ############ Variablen #############
     final ToggleGroup togglegroup = new ToggleGroup();
+    public Player newPlayer = new Player();
+    static ServerInterface serverStub;
     
+    
+    
+    // ####################
+    // main
+    // ####################
     public static void main(String[] args) throws NotBoundException, AlreadyBoundException, RemoteException {
         launch(args);
     }
     
+    
+    
+    // ####################
+    // start
+    // versucht connect zu server und baut dann ui auf
+    // ####################
     @Override
     public void start(final Stage firstStage) throws NotBoundException, AlreadyBoundException, RemoteException{
-/*        try {
-            registrieren();
+        try {
+            connect();
         } catch (NotBoundException|AlreadyBoundException|RemoteException e) {
-            // Error Handling
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, e);
         }
-*/
+
         final BorderPane borderPane = new BorderPane();
 
         borderPane.setLeft(LeftPane());
@@ -59,7 +81,11 @@ public class Client extends Application implements ClientInterface/*, MoveListen
         firstStage.show();
     }
     
-    // ############ borderPane Funktionen #############
+    
+    
+    // ####################
+    // left Pane
+    // ####################
     private Pane LeftPane() {
         final VBox vbox = new VBox(5);
         vbox.setPadding(new Insets(20, 10, 10, 10));
@@ -90,6 +116,11 @@ public class Client extends Application implements ClientInterface/*, MoveListen
 	return vbox;
     }
     
+    
+    
+    // ####################
+    // bottom Pane
+    // ####################
     private Pane BottomPane(){
         final HBox hbox = new HBox(10);
 		
@@ -126,5 +157,46 @@ public class Client extends Application implements ClientInterface/*, MoveListen
         
         return hbox;
     }
+    
+    
+    
+    // ####################
+    // connect
+    // 
+    // ####################
+    private void connect() throws RemoteException, NotBoundException, AlreadyBoundException {
+        
+        ClientInterface currentPlayer = new Client();
+
+        newPlayer.setPlayerID(UUID.randomUUID());
+        newPlayer.setClient((ClientInterface) UnicastRemoteObject.exportObject(currentPlayer, 0));
+        try{
+            Registry registry = LocateRegistry.getRegistry(); 
+            serverStub = (ServerInterface) registry.lookup("Server");
+            serverStub.connect(newPlayer.getPlayerID(),newPlayer.getClient());
+        }
+        catch (Exception e){
+            Stage stage = new Stage();
+            GridPane gridPane = new GridPane();
+            final Label label = new Label();
+            Button exitbutton = new Button("Exit"); 
+            
+            stage.setTitle("ERROR");
+            stage.setScene(new Scene(gridPane, 150, 70));
+            
+            label.setText("Cannot connect to Server.");
+            GridPane.setConstraints(label, 0, 0);
+            GridPane.setConstraints(exitbutton, 0, 1);
+            gridPane.getChildren().addAll(label,exitbutton);
+            
+            exitbutton.setStyle("-fx-border-color:  #545454; -fx-background-color: #F30B0B;");
+            exitbutton.setOnAction((event) -> Platform.exit());
+            
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, e);       
+            
+            stage.show();  
+        }
+    }
+    
     
 }

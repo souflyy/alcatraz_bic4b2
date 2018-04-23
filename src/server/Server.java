@@ -5,12 +5,16 @@
  */
 package server;
 
+import client.ClientInterface;
+import allgemein.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
+import java.rmi.AlreadyBoundException;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Properties;
@@ -18,6 +22,7 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import spread.*;
+import java.io.Serializable;
 
 /**
  *
@@ -28,11 +33,17 @@ public class Server extends UnicastRemoteObject implements AdvancedMessageListen
     private static SpreadConnection connection;
     private static String serverId;
     private static SpreadGroup group;
+    private String groupName;
+    
+    static Registry registry;
+    
+    private ArrayList<Player> AllPlayers = new ArrayList();
+    private boolean PrimaryPlayer = false;
+    private final short playerMessage = 3;
     
     
     
     public Server() throws RemoteException {
-    
         connection = initSpreadConnection("127.0.0.1","Server6");
         group = createSpreadGroup(connection, "Group1");
         connection.add(this);
@@ -68,6 +79,7 @@ public class Server extends UnicastRemoteObject implements AdvancedMessageListen
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        
         try {
             // TODO code application logic here
             Server s = new Server();
@@ -75,6 +87,19 @@ public class Server extends UnicastRemoteObject implements AdvancedMessageListen
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+    }
+    
+    @Override
+    public void connect(UUID playerId, ClientInterface client) throws RemoteException, AlreadyBoundException {
+        Player newPlayer = new Player();
+        newPlayer.setPlayerID(playerId);
+        newPlayer.setClient(client);
+        AllPlayers.add(newPlayer);
+        registry.rebind(playerId.toString(), client);
+        
+        if(PrimaryPlayer== true) {
+            sendMessage(connection, groupName, AllPlayers, playerMessage);
+        }
         
     }
     
@@ -130,6 +155,19 @@ public class Server extends UnicastRemoteObject implements AdvancedMessageListen
     @Override
     public String test() throws RemoteException {
         return "Hello World!";
+    }
+    
+    private static void sendMessage(SpreadConnection connection, String groupName, Object objectData, short messageType) {
+        try {
+            SpreadMessage message = new SpreadMessage();
+            message.setObject((Serializable)objectData);
+            message.addGroup(groupName);
+            message.setReliable(); 
+            message.setType(messageType);
+            connection.multicast(message);
+        } catch (SpreadException e) {
+            //TODO
+        }
     }
     
 }
